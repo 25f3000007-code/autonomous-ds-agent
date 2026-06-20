@@ -27,6 +27,9 @@ class AutonomousAgent:
         
         current_df = self.monitor.df.copy()
         baseline = self.validator.evaluate(current_df)
+        if "error" in baseline:
+            print(f"❌ [Agent] Baseline evaluation failed: {baseline['error']}. Aborting.")
+            return
         self.best_score = baseline['score']
         self.metric_name = baseline['metric']
         self.best_df = current_df.copy()
