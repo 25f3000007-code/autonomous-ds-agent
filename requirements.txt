@@ -3,3 +3,9 @@ numpy
 google-genai
 python-dotenv
 scikit-learn
+google-genai
+numpy
+pandas
+python-dotenv
+scikit-learn
+streamlit

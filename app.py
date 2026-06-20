@@ -37,8 +37,8 @@ if uploaded_file is not None:
         # Get absolute path to the project root
         current_dir = os.path.dirname(os.path.abspath(__file__))
     
-        # Define paths for module-based execution
-        python_exe = os.path.join(current_dir, "venv", "Scripts", "python.exe")
+        # Use the current Python interpreter (works cross-platform)
+        python_exe = sys.executable
     
         # Set the environment
         my_env = os.environ.copy()
