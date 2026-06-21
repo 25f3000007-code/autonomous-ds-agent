@@ -2,24 +2,21 @@ import streamlit as st
 import os
 import subprocess
 import sys
+import hashlib
 from src.main import AutonomousAgent
 
-# Page Config
 st.set_page_config(page_title="Autonomous DS Agent", page_icon="🤖", layout="wide")
 st.title("Autonomous Data Science & Feature Engineering Agent")
 
-# --- INITIALIZE CONTAINERS AT THE TOP LEVEL ---
 status_container = st.container()
 report_container = st.container()
 
-# Sidebar
 uploaded_file = st.sidebar.file_uploader("Upload Messy Dataset (CSV)", type=["csv"])
 target_column = st.sidebar.text_input("Target Column Name", value="price")
 max_iterations = st.sidebar.slider("Optimization Iterations", min_value=1, max_value=10, value=3,
                                     help="More iterations give the AI more attempts to find improvements, but take longer.")
 
 if uploaded_file is not None:
-    # Setup paths relative to the current file
     current_dir = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(current_dir, "data")
     os.makedirs(data_dir, exist_ok=True)
@@ -27,18 +24,24 @@ if uploaded_file is not None:
     optimized_path = filepath.replace(".csv", "_optimized.csv")
     audit_path = filepath.replace(".csv", "_audit_trail.md")
 
+    # Compute a hash of the uploaded file to detect when the user swaps datasets
+    file_bytes = uploaded_file.getvalue()
+    file_hash = hashlib.md5(file_bytes).hexdigest()
+
+    # If the user uploaded a different file, invalidate previous results immediately
+    if st.session_state.get("file_hash") != file_hash:
+        st.session_state["file_hash"] = file_hash
+        st.session_state["results_ready"] = False
+
+    # Write the uploaded file to disk
     with open(filepath, "wb") as f:
-        f.write(uploaded_file.getbuffer())
+        f.write(file_bytes)
 
     if st.sidebar.button("🚀 Run Autonomous Optimization"):
-        with open(filepath, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-
         status_placeholder = status_container.empty()
         status_placeholder.info(f"⏳ Running {max_iterations} iteration(s) — this may take a minute...")
 
         python_exe = sys.executable
-
         my_env = os.environ.copy()
         my_env["PYTHONIOENCODING"] = "utf-8"
         my_env["PYTHONPATH"] = current_dir
@@ -58,25 +61,36 @@ if uploaded_file is not None:
 
             if result.returncode == 0:
                 status_placeholder.success("✅ Optimization finished!")
-                st.session_state["optimized"] = True
+                # Mark results as belonging to the current file
+                st.session_state["results_ready"] = True
+                st.session_state["results_file_hash"] = file_hash
             else:
                 status_placeholder.error(f"Agent Error: {result.stderr}")
         except Exception as e:
             status_placeholder.error(f"System Error: {e}")
 
-    # --- DOWNLOAD BUTTON ---
-    if os.path.exists(optimized_path):
-        with open(optimized_path, "rb") as f:
-            optimized_bytes = f.read()
-        st.sidebar.divider()
-        st.sidebar.download_button(
-            label="⬇️ Download Optimized Dataset",
-            data=optimized_bytes,
-            file_name="optimized_dataset.csv",
-            mime="text/csv",
-        )
+    # Only show results if they were produced for the currently uploaded file
+    results_belong_to_current_file = (
+        st.session_state.get("results_ready") and
+        st.session_state.get("results_file_hash") == file_hash
+    )
 
-    # --- AUDIT TRAIL ---
-    if os.path.exists(audit_path):
-        with open(audit_path, "r", encoding="utf-8") as f:
-            st.markdown(f.read())
+    if results_belong_to_current_file:
+        if os.path.exists(optimized_path):
+            with open(optimized_path, "rb") as f:
+                optimized_bytes = f.read()
+            st.sidebar.divider()
+            st.sidebar.download_button(
+                label="⬇️ Download Optimized Dataset",
+                data=optimized_bytes,
+                file_name="optimized_dataset.csv",
+                mime="text/csv",
+            )
+
+        if os.path.exists(audit_path):
+            with open(audit_path, "r", encoding="utf-8") as f:
+                st.markdown(f.read())
+    else:
+        # Show a neutral prompt so the user knows what to do next
+        with report_container:
+            st.info("⬆️ Dataset loaded. Set your target column and click **🚀 Run Autonomous Optimization** to begin.")
