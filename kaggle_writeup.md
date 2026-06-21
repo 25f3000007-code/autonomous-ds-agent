@@ -9,7 +9,9 @@
 
 -   **Project Repository:** [GitHub Repository Link](https://github.com/25f3000007-code/autonomous-ds-agent)
 
--   **Interactive Cloud Workspace:** [Replit Interactive App Link](https://replit.com/@your_username/autonomous-ds-agent "null")
+-   **Interactive Cloud Workspace:** [Replit Workspace App Link](https://replit.com/@adityaroyiitm/autonomous-ds-agent)
+
+-   **To Test the Running App Instantly:** [Replit Published App Link](https://autonomous-ds-agent--adityaroyiitm.replit.app)
 
 -   **Demonstration Video:** [YouTube Walkthrough Link](https://youtube.com/watch?v=your_video_id "null")
 
