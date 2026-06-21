@@ -47,8 +47,10 @@ class AutonomousAgent:
 
         for i in range(1, self.max_iterations + 1):
             profile = self.monitor.generate_profile()
-            code_string = self.brain.generate_transformation_code(profile)
+            code_string = self.brain.generate_transformation_code(profile, self.target_column)
             new_df = self.executor.apply_transformation(current_df, code_string)
+            # Guard: always restore the original target column so AI scaling can't corrupt it
+            new_df[self.target_column] = current_df[self.target_column].values
             eval_res = self.validator.evaluate(new_df)
             
             if "error" not in eval_res and self._is_improvement(eval_res['score']):

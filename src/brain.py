@@ -123,13 +123,18 @@ class AIBrain:
 """
         return mock_log
 
-    def generate_transformation_code(self, profile_json: str) -> str:
+    def generate_transformation_code(self, profile_json: str, target_column: str = "") -> str:
         """
         Sends the data profile to Gemini and requests data cleaning/engineering code.
         """
         if self.is_mock:
             return "# Mock transformation: No code generation in mock mode"
-        
+
+        target_rule = (
+            f'\n7. CRITICAL — DO NOT modify, scale, encode, transform, or drop the target column "{target_column}". '
+            f'Leave df["{target_column}"] completely untouched. Only transform feature columns.'
+        ) if target_column else ""
+
         system_instruction = (
             "You are a Kaggle Grandmaster AI. Write clean, highly optimized Python code using pandas and numpy "
             "to perform advanced feature engineering and preprocessing.\n\n"
@@ -145,9 +150,10 @@ class AIBrain:
             "5. Do NOT import modules other than `pandas` (as `pd`) and `numpy` (as `np`). Do NOT write file I/O operations.\n"
             "6. Output ONLY valid executable Python code. Do NOT wrap it in markdown block fences or explanations. "
             "Start directly with the code."
+            + target_rule
         )
 
-        prompt = f"Here is the dataset profile JSON:\n{profile_json}\n\nGenerate the preprocessing code."
+        prompt = f"Here is the dataset profile JSON:\n{profile_json}\n\nTarget column (DO NOT transform): {target_column}\n\nGenerate the preprocessing code for all OTHER columns only."
 
         try:
             print(f"🧠 [Brain] Requesting transformation strategy from {self.model_name}...")
