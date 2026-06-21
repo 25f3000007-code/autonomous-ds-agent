@@ -82,6 +82,20 @@ class AutonomousAgent:
         approved = sum(1 for h in self.audit_history if 'Approved' in h['status'])
         rejected = sum(1 for h in self.audit_history if 'Rejected' in h['status'])
 
+        # For display: positive pct always means "got better"
+        if self.is_classification:
+            # Higher F1 is better — improvement is positive delta
+            improved = total_delta > 0
+            pct_change = abs(total_delta / baseline_score * 100) if baseline_score else 0
+            improvement_label = f"📈 +{pct_change:.1f}% better" if improved else f"📉 {pct_change:.1f}% worse"
+            delta_note = "Higher is better (F1-Score)"
+        else:
+            # Lower RMSE is better — improvement is negative delta
+            improved = total_delta < 0
+            pct_change = abs(total_delta / baseline_score * 100) if baseline_score else 0
+            improvement_label = f"📈 {pct_change:.1f}% less error" if improved else f"📉 {pct_change:.1f}% more error"
+            delta_note = "Lower is better (RMSE — negative delta = improvement)"
+
         with open(report_path, 'w', encoding='utf-8') as f:
             f.write("# 🤖 Autonomous DS Agent — Audit Trail\n\n")
             f.write(f"**Metric:** {self.metric_name}\n\n")
@@ -90,20 +104,28 @@ class AutonomousAgent:
             f.write(f"| | Score |\n|---|---|\n")
             f.write(f"| **Baseline** | `{baseline_score}` |\n")
             f.write(f"| **Final (Best)** | `{self.best_score}` |\n")
-            f.write(f"| **Delta** | `{total_delta:+}` |\n\n")
+            f.write(f"| **Change** | {improvement_label} |\n\n")
+            f.write(f"> ℹ️ *{delta_note}*\n\n")
             f.write("---\n\n")
             f.write("## 🔄 Iteration Log\n\n")
-            f.write("| Iteration | Status | Score | Delta |\n")
+            f.write("| Iteration | Status | Score | Change |\n")
             f.write("|---|---|---|---|\n")
             for h in self.audit_history:
-                delta_str = f"`{h['delta']:+}`" if h['delta'] != 0 else "`—`"
+                if h['delta'] != 0:
+                    iter_pct = abs(h['delta'] / baseline_score * 100) if baseline_score else 0
+                    if self.is_classification:
+                        delta_str = f"📈 +{iter_pct:.1f}%" if h['delta'] > 0 else f"📉 -{iter_pct:.1f}%"
+                    else:
+                        delta_str = f"📈 {iter_pct:.1f}% less error" if h['delta'] < 0 else f"📉 {iter_pct:.1f}% more error"
+                else:
+                    delta_str = "—"
                 f.write(f"| {h['iteration']} | {h['status']} | `{h['score']}` | {delta_str} |\n")
             f.write("\n---\n\n")
             f.write("## 📝 Summary\n\n")
             f.write(f"- **Iterations run:** {len(self.audit_history)}\n")
             f.write(f"- **Approved:** {approved}\n")
             f.write(f"- **Rejected:** {rejected}\n")
-            f.write(f"- **Overall improvement:** `{total_delta:+}`\n")
+            f.write(f"- **Result:** {improvement_label}\n")
 
 if __name__ == "__main__":
     # Use absolute path relative to project root

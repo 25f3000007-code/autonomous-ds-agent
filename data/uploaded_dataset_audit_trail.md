@@ -9,8 +9,8 @@
 | | Score |
 |---|---|
 | **Baseline** | `121879.5168` |
-| **Final (Best)** | `121879.5168` |
-| **Delta** | `+0.0` |
+| **Final (Best)** | `69666.3441` |
+| **Delta** | `-52213.1727` |
 
 ---
 
@@ -20,13 +20,13 @@
 |---|---|---|---|
 | 1 | Rejected ❌ | `121879.5168` | `—` |
 | 2 | Rejected ❌ | `121879.5168` | `—` |
-| 3 | Rejected ❌ | `121879.5168` | `—` |
+| 3 | Approved ✅ | `69666.3441` | `-52213.1727` |
 
 ---
 
 ## 📝 Summary
 
 - **Iterations run:** 3
-- **Approved:** 0
-- **Rejected:** 3
-- **Overall improvement:** `+0.0`
+- **Approved:** 1
+- **Rejected:** 2
+- **Overall improvement:** `-52213.1727`
