@@ -9,8 +9,8 @@
 | | Score |
 |---|---|
 | **Baseline** | `121879.5168` |
-| **Final (Best)** | `97640.9098` |
-| **Change** | 📈 19.9% less error |
+| **Final (Best)** | `31927.9639` |
+| **Change** | 📈 73.8% less error |
 
 > ℹ️ *Lower is better (RMSE — negative delta = improvement)*
 
@@ -18,20 +18,28 @@
 
 ## 🔄 Iteration Log
 
-| Iteration | Status | Score | Change |
-|---|---|---|---|
-| 1 | Approved ✅ | `99155.2948` | 📈 18.6% less error |
-| 2 | Approved ✅ | `97640.9098` | 📈 1.2% less error |
-| 3 | Rejected ❌ | `97640.9098` | — |
-| 4 | Rejected ❌ | `97750.948` | — |
-| 5 | Rejected ❌ | `97640.9098` | — |
-| 6 | Rejected ❌ | `97640.9098` | — |
+| Iteration | Status | Score | Change | Note |
+|---|---|---|---|---|
+| 1 | Rejected ❌ | `121879.5168` | — |  |
+| 2 | Rejected ❌ | `121879.5168` | — |  |
+| 3 | Rejected ❌ | `121879.5168` | — |  |
+| 3 | 🔄 Pivot → ExtraTrees | `121879.5168` | — | Feature pipeline locked. Switching model to ExtraTrees to attempt further improvement. |
+| 4 | ✅ ExtraTrees Win | `31927.9639` | 📈 73.8% less error | Model ExtraTrees improved score. |
+| 5 | ❌ ExtraTrees No gain | `31927.9639` | — | No improvement over current best. |
+| 6 | ❌ ExtraTrees No gain | `31927.9639` | — | No improvement over current best. |
+| 7 | ❌ ExtraTrees No gain | `31927.9639` | — | No improvement over current best. |
+| 7 | 🔄 Pivot → HPO-HistGBT | `31927.9639` | — | Feature pipeline locked. Switching model to HPO to attempt further improvement. |
+| 8 | ❌ HPO-HistGBT No gain | `115440.1093` | — | No improvement over current best. |
+| 9 | ❌ HPO-HistGBT No gain | `115440.1093` | — | No improvement over current best. |
+| 10 | ❌ HPO-HistGBT No gain | `115440.1093` | — | No improvement over current best. |
+| 10 | 🛑 Early Stop | `31927.9639` | — | All strategies exhausted. Best score locked in. |
 
 ---
 
 ## 📝 Summary
 
-- **Iterations run:** 6
-- **Approved:** 2
-- **Rejected:** 4
-- **Result:** 📈 19.9% less error
+- **Iterations run:** 13
+- **Approved (feature wins):** 1
+- **Rejected:** 9
+- **Pivots triggered:** 2
+- **Result:** 📈 73.8% less error
