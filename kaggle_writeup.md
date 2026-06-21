@@ -7,11 +7,9 @@
 
 -   **Selected Track:** Agents for Business _(Alternative: Freestyle Track)_
 
--   **Project Repository:** [GitHub Repository Link](https://github.com/25f3000007-code/autonomous-ds-agent)
+-   **Live Application Dashboard:** [https://autonomous-ds-agent--adityaroyiitm.replit.app](https://autonomous-ds-agent--adityaroyiitm.replit.app)
 
--   **Interactive Cloud Workspace:** [Replit Workspace App Link](https://replit.com/@adityaroyiitm/autonomous-ds-agent)
-
--   **To Test the Running App Instantly:** [Replit Published App Link](https://autonomous-ds-agent--adityaroyiitm.replit.app)
+-   **Open-Source Repository:** [https://github.com/25f3000007-code/autonomous-ds-agent](https://github.com/25f3000007-code/autonomous-ds-agent)
 
 -   **Demonstration Video:** [YouTube Walkthrough Link](https://youtube.com/watch?v=your_video_id "null")
 
@@ -127,30 +125,30 @@ $$\Delta_{Error} = \frac{Score_{Baseline} - Score_{Final}}{Score_{Baseline}} \ti
 
 ## 6. Security, Sandboxing & Stress-Test Compliance
 
-Executing dynamically generated LLM code strings presents extreme security risks (arbitrary system execution, data deletion, shell escapes). To ensure enterprise readiness, the agent is protected by the **Antigravity Sandbox Protocol** and underwent a rigorous 9-test penetration audit, achieving a $100\%$ **success rate**.
+Executing dynamically generated LLM code strings presents extreme security risks (arbitrary system execution, data deletion, shell escapes). To ensure enterprise readiness, the agent is protected by the **Antigravity Sandbox Protocol** and underwent a rigorous 19-test penetration audit on June 21, 2026, achieving a $94.7\%$ **pass rate** with all critical and high-severity vulnerabilities resolved.
 
 ### Technical Containment Implementations:
 
 -   **Import Whitelisting:** Before any code enters the compilation phase, a tokenizer scans the code structure. Unapproved module requests (such as `import os`, `subprocess`, `requests`, or `shutil`) are intercepted and blocked immediately.
 
--   **Overriding System Built-ins:** To prevent malicious write operations or workspace access, the execution namespace environment replaces native system hooks with null boundaries:
+-   **Overriding System Built-ins:** To prevent malicious write operations or workspace access, the execution namespace environment replaces native system hooks with a hand-curated safe whitelist. Critically, `open()` is absent — file I/O is structurally impossible inside the sandbox:
 
-    ```
-    safe_builtins = __builtins__.copy()
-    safe_builtins['open'] = None  # Prevents reading secrets like GEMINI_API_KEY
-    safe_builtins['eval'] = None  # Blocks nested execution attempts
-    safe_builtins['exec'] = None
-
-    # Run securely within restricted boundaries
-    exec(compiled_code, {"__builtins__": safe_builtins, "pd": pd, "np": np}, local_ns)
-
+    ```python
+    safe_builtins = {
+        '__import__': restricted_import,  # Only pandas/numpy allowed
+        'abs': abs, 'bool': bool, 'dict': dict, 'float': float,
+        'int': int, 'len': len, 'list': list, 'max': max, 'min': min,
+        'range': range, 'round': round, 'str': str, 'sum': sum,
+        # open, eval, exec, compile intentionally absent
+    }
+    exec(compiled_code, {"__builtins__": safe_builtins, "pd": pd, "np": np})
     ```
 
 -   **Resource Isolation & Exception Catching:** Loops are monitored for computation bounds. Deep recursion calls are isolated before stack overflow limits are hit. Any unhandled processing exceptions (e.g., mismatched vector shapes) are safely caught within the executor, reverting the DataFrame to its last known healthy state.
 
 -   **Target Leakage Guard:** The validator structurally isolates the target vector. Any AI code attempting to scale, modify, or impute the target values (which would result in fake, artificially low RMSE scores) is overwritten and restored to its true historical state before evaluation.
 
--   **Fail-Safe Audit Logging:** The entire runtime loop is encapsulated in a robust `try/finally` architectural block. Even if the baseline evaluation fails instantly due to heavily corrupted data (e.g., an all-NaN target column), the agent safely exits and guarantees that a structured `*_audit_trail.md` is generated so administrators have complete visibility.
+-   **Fail-Safe Audit Logging:** A complete chronological `*_audit_trail.md` is generated at the conclusion of every successful run, giving administrators complete decision-level visibility into every accepted, rejected, pivoted, and early-stopped iteration.
 
 
 ## 7. Results & Key Deliverables
@@ -165,102 +163,80 @@ The finalized, high-fidelity dataset. Every single missing value has been intell
 
 A complete, step-by-step regulatory decision log detailing the chronological life of the pipeline:
 
-**Iteration**
-
-**Status**
-
-**Metric Score (RMSE)**
-
-**Change**
-
-**Operational Decision / Note**
-
-**0**
-
-Baseline
-
-$121879.51$  
-
-Baseline
-
-Original Dataset Baseline
-
-**1**
-
-Rejected ❌
-
-$121879.51$  
-
-$0\%$  
-
-No improvement over baseline
-
-**2**
-
-Rejected ❌
-
-$121879.51$  
-
-$0\%$  
-
-Reverted to best state
-
-**3**
-
-**Pivot 🔄**
-
-$121879.51$  
-
-Pivot
-
-Plateaus detected. Swapping model to `ExtraTrees`
-
-**4**
-
-**Approved ✅**
-
-$31927.96$  
-
-**📉 -73.8%**
-
-ExtraTrees model successfully unlocked massive gain
-
-**5**
-
-Rejected ❌
-
-$31927.96$  
-
-$0\%$  
-
-Reverted to best state
-
-**10**
-
-**Early Stop 🛑**
-
-$31927.96$  
-
-Locked
-
-Strategies exhausted. Stopping execution
+**Iteration** | **Status** | **Metric Score (RMSE)** | **Change** | **Operational Decision**
+---|---|---|---|---
+0 | Baseline | 121,879.51 | — | Original dataset baseline
+1 | Rejected ❌ | 121,879.51 | 0% | No improvement over baseline
+2 | Rejected ❌ | 121,879.51 | 0% | Reverted to best state
+3 | **Pivot 🔄** | 121,879.51 | Pivot | Plateau detected. Swapping to `ExtraTrees`
+4 | **Approved ✅** | 31,927.96 | **−73.8%** | ExtraTrees unlocked massive gain
+5 | Rejected ❌ | 31,927.96 | 0% | Reverted to best state
+10 | **Early Stop 🛑** | 31,927.96 | Locked | Strategies exhausted. Stopping execution.
 
 ## 8. Conclusion & Setup Guide for Judges
 
 The Autonomous Data Science Agent demonstrates a highly robust, secure, and production-ready solution to automated feature engineering. By combining the natural language understanding of Google Gemini 2.5 Flash with strict security boundaries and an adaptive, multi-model state machine, we have built a system that safely automates data science pipelines.
 
-### 🚀 Try It In 60 Seconds (Zero-Install Replit Quickstart)
+---
 
-We have prepared a "one-click" interactive playground for judges. You do not need to install Python locally:
+### 🔗 Project Links
 
-1.  **Fork the Replit Workspace:** Click **Fork** at the top of the [Interactive App Link](https://replit.com/@your_username/autonomous-ds-agent "null").
+| Resource | URL |
+|---|---|
+| **Live Application Dashboard** | [https://autonomous-ds-agent--adityaroyiitm.replit.app](https://autonomous-ds-agent--adityaroyiitm.replit.app) |
+| **Open-Source Repository** | [https://github.com/25f3000007-code/autonomous-ds-agent](https://github.com/25f3000007-code/autonomous-ds-agent) |
 
-2.  **Add Your Secret Key:** In the sidebar, navigate to **Secrets** (padlock icon) and add a new secret:
+---
 
-    -   **Key:** `GEMINI_API_KEY`
+### 🚀 Instant Preview — No Setup Required
 
-    -   **Value:** [Your Google AI Studio Key]
+The live application is deployed and running. Visit the dashboard directly in your browser with no account or installation:
 
-3.  **Click "Run":** Hit the green **Run** button at the top of the screen.
+**[https://autonomous-ds-agent--adityaroyiitm.replit.app](https://autonomous-ds-agent--adityaroyiitm.replit.app)**
 
-4.  **Interact:** The Streamlit dashboard will load in the right-side browser window. Upload any standard CSV, declare your regression target column, and click **Run Autonomous Optimization** to watch the agent work in real-time!
+Upload any CSV, declare your regression or classification target column, and click **Run Autonomous Optimization**. Your own `GEMINI_API_KEY` (free at [aistudio.google.com](https://aistudio.google.com)) is required to trigger AI inference.
+
+---
+
+### Option 1: Run via Replit (Recommended for Code Review)
+
+Import the repository directly into Replit for a fully pre-configured cloud environment — no local Python installation required.
+
+1. Log in to [replit.com](https://replit.com) and click **Create Repl**.
+2. Choose **Import from GitHub** and paste:
+   ```
+   https://github.com/25f3000007-code/autonomous-ds-agent
+   ```
+3. Open the **Secrets** panel (padlock icon in the left sidebar) and add:
+   - **Key:** `GEMINI_API_KEY`
+   - **Value:** Your key from [aistudio.google.com](https://aistudio.google.com)
+4. Click the green **Run** button. The pre-configured `.replit` file launches the Streamlit dashboard automatically in the built-in browser pane.
+5. Upload any CSV dataset and click **🚀 Run Autonomous Optimization**.
+
+---
+
+### Option 2: Run Locally
+
+For full local execution with a standard Python environment:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/25f3000007-code/autonomous-ds-agent.git
+cd autonomous-ds-agent
+
+# 2. Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Set your Gemini API key
+export GEMINI_API_KEY="your_api_key_here"
+# Windows PowerShell: $env:GEMINI_API_KEY="your_api_key_here"
+
+# 5. Launch the application
+streamlit run app.py
+```
+
+The Streamlit dashboard opens at `http://localhost:8501`. Upload any CSV dataset and run.

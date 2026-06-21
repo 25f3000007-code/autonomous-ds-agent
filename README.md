@@ -10,6 +10,15 @@
 
 ---
 
+## 🔗 Project Links
+
+| Resource | Link |
+|---|---|
+| **Live Application Dashboard** | [https://autonomous-ds-agent--adityaroyiitm.replit.app](https://autonomous-ds-agent--adityaroyiitm.replit.app) |
+| **Open-Source Repository** | [https://github.com/25f3000007-code/autonomous-ds-agent](https://github.com/25f3000007-code/autonomous-ds-agent) |
+
+---
+
 ## 🚀 Project Overview
 
 Modern data science teams spend **60–80% of project time** on feature engineering — a slow, manual, and error-prone bottleneck that blocks model deployment. This agent eliminates that bottleneck entirely.
@@ -129,7 +138,8 @@ The audit trail gives judges and stakeholders a transparent, line-by-line explan
 | **Track** | ✅ | Agents for Business / Freestyle Track — enterprise data pipeline automation |
 | **Kaggle Writeup** | 📝 | [Public Writeup Link — Placeholder, under 2,500 words] |
 | **Video Demo** | 🎬 | [YouTube Walkthrough — 5-min Streamlit UI demonstration, Placeholder] |
-| **Public Project Link** | ✅ | This Replit workspace — zero-install, interactive, forkable |
+| **Live App** | ✅ | [https://autonomous-ds-agent--adityaroyiitm.replit.app](https://autonomous-ds-agent--adityaroyiitm.replit.app) — zero-install, interactive |
+| **Source Code** | ✅ | [https://github.com/25f3000007-code/autonomous-ds-agent](https://github.com/25f3000007-code/autonomous-ds-agent) |
 | **AI Tool Integration** | ✅ | Google Gemini 2.5 Flash (core reasoning engine) |
 | **Autonomous Agent Loop** | ✅ | Monitor → Brain → Executor → Validator with pivot state machine |
 | **Reproducible Results** | ✅ | Audit trail + optimized CSV written on every run |
@@ -137,19 +147,65 @@ The audit trail gives judges and stakeholders a transparent, line-by-line explan
 
 ---
 
-## 💻 Replit One-Click Quickstart (For Judges)
+## 💻 Quickstart Guide (For Judges)
 
-This project is designed for **zero-friction evaluation**. No local Python installation, no terminal setup, no environment variables to manually configure — everything runs inside the browser.
+### Instant Preview — No Setup Required
 
-### Steps
+The live application is deployed and running. Visit it directly in your browser — no account, no installation:
 
-1. **Fork this Replit workspace** to your personal Replit account (click Fork at the top of the interface).
-2. **Add your Gemini API key** as a Replit Secret named `GEMINI_API_KEY` (Replit sidebar → Secrets → New Secret). Get a free key at [aistudio.google.com](https://aistudio.google.com).
-3. **Click the green Run button** at the top of the Replit interface.
-4. Replit automatically installs all required packages and launches the Streamlit dashboard inside the built-in browser pane.
-5. **Upload any CSV dataset**, enter your target column name, set the iteration count, and click **🚀 Run Autonomous Optimization**.
+**[https://autonomous-ds-agent--adityaroyiitm.replit.app](https://autonomous-ds-agent--adityaroyiitm.replit.app)**
 
-> No manual terminal inputs, no `pip install`, no path configuration required.
+Upload any CSV, set your target column, and run. Your own `GEMINI_API_KEY` is required to trigger AI inference.
+
+---
+
+### Option 1: Run via Replit (Recommended for Judges)
+
+Import the repository directly into Replit for a fully pre-configured cloud environment — no local setup needed.
+
+1. Log in to [replit.com](https://replit.com) and click **Create Repl**.
+2. Choose **Import from GitHub** and paste the repository URL:
+   ```
+   https://github.com/25f3000007-code/autonomous-ds-agent
+   ```
+3. Once imported, open the **Secrets** panel (padlock icon in the left sidebar).
+4. Add a new secret:
+   - **Key:** `GEMINI_API_KEY`
+   - **Value:** Your key from [aistudio.google.com](https://aistudio.google.com)
+5. Click the green **Run** button. Replit reads the pre-configured `.replit` file and launches the Streamlit dashboard automatically in the built-in browser pane.
+6. Upload any CSV dataset, enter your target column name, set the iteration count, and click **🚀 Run Autonomous Optimization**.
+
+> No terminal commands, no `pip install`, no path configuration required.
+
+---
+
+### Option 2: Run Locally
+
+For full local execution with a standard Python environment:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/25f3000007-code/autonomous-ds-agent.git
+cd autonomous-ds-agent
+
+# 2. Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Set your Gemini API key
+export GEMINI_API_KEY="your_api_key_here"
+# Windows PowerShell: $env:GEMINI_API_KEY="your_api_key_here"
+
+# 5. Launch the application
+streamlit run app.py
+```
+
+The Streamlit dashboard opens at `http://localhost:8501`. Upload any CSV dataset and run.
+
+---
 
 ### Tech Stack
 
@@ -159,7 +215,7 @@ This project is designed for **zero-friction evaluation**. No local Python insta
 | AI Reasoning | Google Gemini 2.5 Flash (`google-genai`) |
 | Data Processing | pandas, numpy |
 | ML Validation | scikit-learn (HistGradientBoosting, ExtraTrees, RandomizedSearchCV) |
-| Runtime | Python 3.12 on Replit (NixOS) |
+| Runtime | Python 3.12 |
 
 ---
 
