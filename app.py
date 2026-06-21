@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import subprocess
 import sys
-# 1. Update the import (this will now work with the src folder)
 from src.main import AutonomousAgent
 
 # Page Config
@@ -23,7 +22,9 @@ if uploaded_file is not None:
     data_dir = os.path.join(current_dir, "data")
     os.makedirs(data_dir, exist_ok=True)
     filepath = os.path.join(data_dir, "uploaded_dataset.csv")
-    
+    optimized_path = filepath.replace(".csv", "_optimized.csv")
+    audit_path = filepath.replace(".csv", "_audit_trail.md")
+
     with open(filepath, "wb") as f:
         f.write(uploaded_file.getbuffer())
 
@@ -32,21 +33,17 @@ if uploaded_file is not None:
             f.write(uploaded_file.getbuffer())
 
         status_placeholder = status_container.empty()
-        status_placeholder.info("Running optimization...")
+        status_placeholder.info("⏳ Running optimization — this may take a minute...")
 
-        # Get absolute path to the project root
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-    
         # Use the current Python interpreter (works cross-platform)
         python_exe = sys.executable
-    
+
         # Set the environment
         my_env = os.environ.copy()
         my_env["PYTHONIOENCODING"] = "utf-8"
-        my_env["PYTHONPATH"] = current_dir # Add root to PYTHONPATH so 'src' is found
+        my_env["PYTHONPATH"] = current_dir
 
         try:
-            # Execute as a module from the root
             result = subprocess.run(
                 [python_exe, "-m", "src.main"],
                 cwd=current_dir,
@@ -56,17 +53,28 @@ if uploaded_file is not None:
                 encoding='utf-8',
                 errors='replace'
             )
-        
+
             if result.returncode == 0:
-                status_placeholder.success("Optimization finished!")
+                status_placeholder.success("✅ Optimization finished!")
                 st.session_state["optimized"] = True
             else:
                 status_placeholder.error(f"Agent Error: {result.stderr}")
         except Exception as e:
             status_placeholder.error(f"System Error: {e}")
 
-    # Render results
-    audit_path = filepath.replace(".csv", "_audit_trail.md")
+    # --- DOWNLOAD BUTTON ---
+    if os.path.exists(optimized_path):
+        with open(optimized_path, "rb") as f:
+            optimized_bytes = f.read()
+        st.sidebar.divider()
+        st.sidebar.download_button(
+            label="⬇️ Download Optimized Dataset",
+            data=optimized_bytes,
+            file_name="optimized_dataset.csv",
+            mime="text/csv",
+        )
+
+    # --- AUDIT TRAIL ---
     if os.path.exists(audit_path):
         with open(audit_path, "r", encoding="utf-8") as f:
             st.markdown(f.read())
