@@ -1,0 +1,61 @@
+Act as an expert Senior ML Engineer, DevOps Specialist, and Technical Writer. I am preparing this repository for a formal Kaggle Hackathon Capstone project submission. When judges open our Replit link, they will fork or clone this workspace directly inside their browsers and click the giant green "Run" button. 
+
+I need you to perform an exhaustive workspace upgrade by overwriting/creating two critical assets: a professional `README.md` file that strictly addresses all Kaggle submission criteria, and the required Replit configuration files so the project runs seamlessly out of the box.
+
+Please execute the following tasks:
+
+---
+
+### TASK 1: Create/Overwrite the `README.md` File
+Completely rewrite the `README.md` file using professional typography, clean structure, and Markdown badges. Design it to act as the ultimate documentation companion for our Kaggle Writeup submission. Include the following exact sections:
+
+1. 🚀 PROJECT TITLE & OVERVIEW
+- Title: 🤖 Autonomous Data Science & Feature Engineering Agent
+- Subtitle: An adaptive, self-healing multi-stage AutoML agent built for enterprise data pipeline optimization.
+- Include a high-level pitch explaining how it automates the tedious "Feature Engineering Bottleneck" by running an autonomous execution loop (Monitor -> Brain -> Executor -> Validator).
+
+2. 🧠 CORE ARCHITECTURE & AI TOOLS USED
+Detail the foundational tools that power this agent's intelligence, explicitly showcasing how they are integrated:
+- Google Gemini API via Google AI Studio: Explain that the agent's core reasoning engine ("AIBrain") leverages the Gemini API to analyze dataset profiles, formulate mathematical hypotheses, and generate clean, executable Python transformations.
+- Advanced Agent Skills (AutoML Pipeline): Detail how the engine tracks iterations. If a feature engineering path plateaus, the agent executes an "Algorithmic Pivot," locks the data state, and dynamically swaps the underlying machine learning model (e.g., transitioning from Baseline to `ExtraTreesRegressor` or `HistGradientBoostingRegressor`) to maximize predictive accuracy.
+- Execution Triggers & Resource Isolation: Tracks strategy exhaustions to trigger an "Early Stop" mechanism, preventing infinite loops and saving computational credits.
+
+3. 🔒 SECURITY, SANDBOXING & STRESS-TEST COMPLIANCE
+Emphasize that this agent has been aggressively stress-tested against adversarial inputs and vulnerability attacks with a 100% success rate:
+- Sandbox Escape Defenses: Built-in whitelisting blocks malicious code injection attempts (e.g., blocking unauthorized `import os`, `subprocess`, or `__builtins__['eval']`).
+- The 'Antigravity' Sandbox Protocol: Explain that code execution uses highly restricted environments inspired by safe compilation design patterns (and python's native isolation protections) to run generated code strings securely without risking system compromise.
+- Crash-Resilient Error Handling: Gracefully isolates infinite loops, heavy matrix calculation timeouts, deep recursion boundaries, and empty/corrupted evaluation rows via strict validator guard clauses.
+
+4. 📊 EXPECTED AGENT OUTPUTS
+Explain what files are created in the project directory after a run execution:
+- `*_optimized.csv`: The finalized, highly transformed, clean dataset ready for production model deployment.
+- `*_audit_trail.md`: A complete, chronological "decision ledger" serving as a visible audit trail for judges, tracking Approved/Merged wins, Performance Degradation Rejections, and Algorithmic Pivots.
+
+5. 🏆 KAGGLE SUBMISSION COMPLIANCE CHECKLIST
+Add a dedicated section demonstrating exactly how this project hits all validation markers for the hackathon judging criteria:
+- Track Selected: Agents for Business / Freestyle Track (Solving enterprise data pipeline automation and optimization challenges).
+- Kaggle Writeup Link: [Placeholder for Public Writeup Link - under 2,500 words]
+- Media Gallery & Video: Formally links to our 5-minute (or less) YouTube demonstration walkthrough showcasing the Streamlit UI in action.
+- Public Project Link (The Wow Factor): This active Replit Link serves as the zero-install, interactive environment where judges can instantly verify functionality with zero local friction.
+
+6. 💻 REPLIT ONE-CLICK QUICKSTART (FOR JUDGES)
+Provide crystal-clear setup instructions tailored specifically for judges cloning this repository:
+1. Fork or Clone this Replit workspace directly to your personal account.
+2. Click the giant green "Run" button at the very top of the Replit interface.
+3. Replit will automatically initialize the environment, install required packages, and launch the interactive Streamlit dashboard directly inside the built-in Replit browser pane. No manual terminal inputs or setup parameters are required.
+
+---
+
+### TASK 2: Configure Replit One-Click Execution Files
+Ensure that clicking the global "Run" button launches the Streamlit app instantly without requiring manual setup.
+
+1. Create/Update the `.replit` configuration file with the following exact parameters:
+```toml
+modules = ["python-3.11"]
+run = "streamlit run app.py --server.port 8501 --server.address 0.0.0.0"
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["streamlit", "run", "app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
