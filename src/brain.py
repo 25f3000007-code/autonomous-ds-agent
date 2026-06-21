@@ -123,9 +123,12 @@ class AIBrain:
 """
         return mock_log
 
-    def generate_transformation_code(self, profile_json: str, target_column: str = "") -> str:
+    def generate_transformation_code(self, profile_json: str, target_column: str = "",
+                                       iteration: int = 1, current_score: float = None,
+                                       metric_name: str = "", history: list = None) -> str:
         """
         Sends the data profile to Gemini and requests data cleaning/engineering code.
+        Includes iteration context and history so the AI can build progressively.
         """
         if self.is_mock:
             return "# Mock transformation: No code generation in mock mode"
@@ -143,7 +146,7 @@ class AIBrain:
             "2. Handle missing values strategically (e.g., median for skewed, mode for categorical, flag columns for missingness).\n"
             "3. Implement advanced feature engineering transformations:\n"
             "   - Skewness mitigation: Check for skewness (>0.75 or <-0.75) and apply log/power transformations (e.g. `np.log1p()`).\n"
-            "   - Interaction terms: Create promising feature interactions (products, ratios, differences) between numeric columns.\n"
+            "   - Interaction terms: Create promising feature interactions (products, ratios, differences) between numeric columns, especially high target_corr ones.\n"
             "   - Scaling: Apply scaling properties (StandardScaler or MinMaxScaler style scaling) to continuous numeric columns.\n"
             "   - Encoding: Encode categoricals strategically (frequency or target-like encoding) instead of basic LabelEncoder mappings.\n"
             "4. AVOID `inplace=True` operations. Use direct assignment: df['col'] = df['col'].fillna(...)\n"
@@ -153,7 +156,38 @@ class AIBrain:
             + target_rule
         )
 
-        prompt = f"Here is the dataset profile JSON:\n{profile_json}\n\nTarget column (DO NOT transform): {target_column}\n\nGenerate the preprocessing code for all OTHER columns only."
+        # Build iteration context so the AI knows what's been tried and can try different things
+        history_str = ""
+        if history:
+            history_str = "\n\nIteration history so far:\n"
+            for h in history:
+                history_str += f"  - Iteration {h['iteration']}: {h['status']} | Score: {h['score']}\n"
+            last_approved = [h for h in history if 'Approved' in h['status']]
+            last_rejected = [h for h in history if 'Rejected' in h['status']]
+            if last_rejected:
+                history_str += (
+                    f"\nThe last {len(last_rejected)} transformation(s) were rejected (did not improve the score). "
+                    "Try a DIFFERENT strategy — focus on new interaction terms, polynomial features, or different encoding approaches "
+                    "rather than repeating the same transformations."
+                )
+            if last_approved:
+                history_str += (
+                    f"\nIteration {last_approved[-1]['iteration']} was approved. The profile now reflects the ALREADY-TRANSFORMED data. "
+                    "Build on top of what exists — do not re-apply transformations that are likely already done."
+                )
+
+        score_context = ""
+        if current_score is not None and metric_name:
+            score_context = f"\nCurrent best score: {current_score} ({metric_name}). Your goal is to reduce this further."
+
+        prompt = (
+            f"Iteration {iteration} of autonomous feature engineering.\n"
+            f"Target column (DO NOT transform): {target_column}\n"
+            f"{score_context}"
+            f"{history_str}\n\n"
+            f"Current dataset profile JSON (reflects the state AFTER previous approved transformations):\n{profile_json}\n\n"
+            "Generate preprocessing code that builds on what has already been done and tries a fresh angle to improve the score."
+        )
 
         try:
             print(f"🧠 [Brain] Requesting transformation strategy from {self.model_name}...")

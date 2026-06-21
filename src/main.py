@@ -46,8 +46,14 @@ class AutonomousAgent:
         print(f"📊 [Agent] Baseline {self.metric_name}: {self.best_score}")
 
         for i in range(1, self.max_iterations + 1):
+            # Always profile the CURRENT state of the data, not the original
+            self.monitor.df = current_df.copy()
             profile = self.monitor.generate_profile(self.target_column)
-            code_string = self.brain.generate_transformation_code(profile, self.target_column)
+            code_string = self.brain.generate_transformation_code(
+                profile, self.target_column,
+                iteration=i, current_score=self.best_score,
+                metric_name=self.metric_name, history=self.audit_history
+            )
             new_df = self.executor.apply_transformation(current_df, code_string)
             # Guard: always restore the original target column so AI scaling can't corrupt it
             new_df[self.target_column] = current_df[self.target_column].values
@@ -56,7 +62,7 @@ class AutonomousAgent:
             if "error" not in eval_res and self._is_improvement(eval_res['score']):
                 prev_score = self.best_score
                 self.best_score = eval_res['score']
-                self.best_df = new_df.copy()   # save the best dataframe
+                self.best_df = new_df.copy()
                 current_df = new_df.copy()
                 self.audit_history.append({
                     'iteration': i,
