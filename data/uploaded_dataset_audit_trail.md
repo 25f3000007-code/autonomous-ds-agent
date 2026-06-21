@@ -9,8 +9,8 @@
 | | Score |
 |---|---|
 | **Baseline** | `121879.5168` |
-| **Final (Best)** | `118072.6084` |
-| **Change** | 📈 3.1% less error |
+| **Final (Best)** | `97640.9098` |
+| **Change** | 📈 19.9% less error |
 
 > ℹ️ *Lower is better (RMSE — negative delta = improvement)*
 
@@ -20,16 +20,18 @@
 
 | Iteration | Status | Score | Change |
 |---|---|---|---|
-| 1 | Approved ✅ | `118072.6084` | 📈 3.1% less error |
-| 2 | Rejected ❌ | `118072.6084` | — |
-| 3 | Rejected ❌ | `118072.6084` | — |
-| 4 | Rejected ❌ | `118072.6084` | — |
+| 1 | Approved ✅ | `99155.2948` | 📈 18.6% less error |
+| 2 | Approved ✅ | `97640.9098` | 📈 1.2% less error |
+| 3 | Rejected ❌ | `97640.9098` | — |
+| 4 | Rejected ❌ | `97750.948` | — |
+| 5 | Rejected ❌ | `97640.9098` | — |
+| 6 | Rejected ❌ | `97640.9098` | — |
 
 ---
 
 ## 📝 Summary
 
-- **Iterations run:** 4
-- **Approved:** 1
-- **Rejected:** 3
-- **Result:** 📈 3.1% less error
+- **Iterations run:** 6
+- **Approved:** 2
+- **Rejected:** 4
+- **Result:** 📈 19.9% less error
