@@ -46,7 +46,7 @@ class AutonomousAgent:
         print(f"📊 [Agent] Baseline {self.metric_name}: {self.best_score}")
 
         for i in range(1, self.max_iterations + 1):
-            profile = self.monitor.generate_profile()
+            profile = self.monitor.generate_profile(self.target_column)
             code_string = self.brain.generate_transformation_code(profile, self.target_column)
             new_df = self.executor.apply_transformation(current_df, code_string)
             # Guard: always restore the original target column so AI scaling can't corrupt it
@@ -130,8 +130,9 @@ class AutonomousAgent:
             f.write(f"- **Result:** {improvement_label}\n")
 
 if __name__ == "__main__":
-    # Use absolute path relative to project root
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_path = os.path.join(root, "data", "uploaded_dataset.csv")
-    agent = AutonomousAgent(data_path, "price")
+    target_col = os.environ.get("AGENT_TARGET_COLUMN", "price")
+    max_iter = int(os.environ.get("AGENT_MAX_ITERATIONS", "3"))
+    agent = AutonomousAgent(data_path, target_col, max_iterations=max_iter)
     agent.run()

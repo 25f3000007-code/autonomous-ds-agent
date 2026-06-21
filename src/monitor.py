@@ -24,29 +24,37 @@ class DataMonitor:
             print(f"❌ [Monitor] Unexpected error loading data: {e}")
             return False
 
-    def generate_profile(self) -> str:
+    def generate_profile(self, target_column: str = "") -> str:
         """
         Computes structural metrics and compresses them into a JSON string.
         This string acts as the high-signal prompt context for the AI Brain.
+        Optionally includes Pearson correlation of each feature with the target.
         """
         if self.df is None:
             return '{"error":"No data loaded"}'
 
         # 1. Structural Basics
         shape = {"rows": self.df.shape[0], "cols": self.df.shape[1]}
-        
-        # 2. Data Types & Missing Values
+
+        # Pre-compute correlations with target if available
+        target_corr = {}
+        if target_column and target_column in self.df.columns:
+            try:
+                numeric_df = self.df.select_dtypes(include=[np.number])
+                if target_column in numeric_df.columns:
+                    corr_series = numeric_df.corr()[target_column].drop(target_column, errors='ignore')
+                    target_corr = {col: round(float(v), 3) for col, v in corr_series.items() if not pd.isna(v)}
+            except Exception:
+                pass
+
+        # 2. Data Types, Missing Values, Skewness, and Target Correlation
         column_meta = {}
         for col in self.df.columns:
             dtype = str(self.df[col].dtype)
             missing = int(self.df[col].isnull().sum())
-            
-            # 3. Simple Skewness Check for numericals
-            meta = {
-                "dtype": dtype,
-                "missing": missing
-            }
-            
+
+            meta = {"dtype": dtype, "missing": missing}
+
             if pd.api.types.is_numeric_dtype(self.df[col]):
                 try:
                     skewness = self.df[col].skew()
@@ -54,15 +62,29 @@ class DataMonitor:
                         meta["skew"] = round(float(skewness), 2)
                 except Exception:
                     pass
+                # Add outlier count (values beyond 3 std devs)
+                try:
+                    mean = self.df[col].mean()
+                    std = self.df[col].std()
+                    if std and not pd.isna(std):
+                        outliers = int(((self.df[col] - mean).abs() > 3 * std).sum())
+                        if outliers > 0:
+                            meta["outliers"] = outliers
+                except Exception:
+                    pass
+
+            # Target correlation (skip the target column itself)
+            if col != target_column and col in target_corr:
+                meta["target_corr"] = target_corr[col]
 
             column_meta[col] = meta
 
         profile_dict = {
             "shape": shape,
+            "target_column": target_column,
             "columns": column_meta
         }
 
-        # Return a tight, token-efficient JSON string without extra whitespaces
         return json.dumps(profile_dict, separators=(',', ':'))
 
 if __name__ == "__main__":

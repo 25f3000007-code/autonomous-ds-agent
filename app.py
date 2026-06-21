@@ -15,6 +15,8 @@ report_container = st.container()
 # Sidebar
 uploaded_file = st.sidebar.file_uploader("Upload Messy Dataset (CSV)", type=["csv"])
 target_column = st.sidebar.text_input("Target Column Name", value="price")
+max_iterations = st.sidebar.slider("Optimization Iterations", min_value=1, max_value=10, value=3,
+                                    help="More iterations give the AI more attempts to find improvements, but take longer.")
 
 if uploaded_file is not None:
     # Setup paths relative to the current file
@@ -33,15 +35,15 @@ if uploaded_file is not None:
             f.write(uploaded_file.getbuffer())
 
         status_placeholder = status_container.empty()
-        status_placeholder.info("⏳ Running optimization — this may take a minute...")
+        status_placeholder.info(f"⏳ Running {max_iterations} iteration(s) — this may take a minute...")
 
-        # Use the current Python interpreter (works cross-platform)
         python_exe = sys.executable
 
-        # Set the environment
         my_env = os.environ.copy()
         my_env["PYTHONIOENCODING"] = "utf-8"
         my_env["PYTHONPATH"] = current_dir
+        my_env["AGENT_TARGET_COLUMN"] = target_column
+        my_env["AGENT_MAX_ITERATIONS"] = str(max_iterations)
 
         try:
             result = subprocess.run(
