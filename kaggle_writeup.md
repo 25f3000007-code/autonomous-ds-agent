@@ -7,7 +7,7 @@
 
 -   **Selected Track:** Agents for Business _(Alternative: Freestyle Track)_
 
--   **Project Repository:** [GitHub Repository Link](https://github.com/25f3000007-code/autonomous-ds-agent "null")
+-   **Project Repository:** [GitHub Repository Link](https://github.com/25f3000007-code/autonomous-ds-agent)
 
 -   **Interactive Cloud Workspace:** [Replit Interactive App Link](https://replit.com/@your_username/autonomous-ds-agent "null")
 
