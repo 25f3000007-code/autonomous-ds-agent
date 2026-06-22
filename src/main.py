@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import time
 from src.monitor import DataMonitor
 from src.brain import AIBrain
 from src.executor import CodeExecutor
@@ -156,6 +157,8 @@ class AutonomousAgent:
                 # FEATURE ENGINEERING PHASE: AI generates transformation code
                 self.monitor.df = current_df.copy()
                 profile = self.monitor.generate_profile(self.target_column)
+                print("⏳ Giving Gemini API a brief cooling period...")
+                time.sleep(8)
                 code_string = self.brain.generate_transformation_code(
                     profile, self.target_column,
                     iteration=i, current_score=self.best_score,
