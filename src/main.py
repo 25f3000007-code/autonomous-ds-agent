@@ -197,6 +197,8 @@ class AutonomousAgent:
                         self._handle_plateau(i)
 
         self.best_df.to_csv(self.filepath.replace(".csv", "_optimized.csv"), index=False)
+        self.best_df.to_csv(self.filepath, index=False)
+        print(f"🎉 Fully optimized dataset written to disk at: {self.filepath}")
         self._generate_audit_report(baseline_score)
 
     # ------------------------------------------------------------------
