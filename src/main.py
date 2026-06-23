@@ -1,6 +1,10 @@
 import pandas as pd
 import os
 import time
+import json
+import uuid
+import traceback
+from datetime import datetime
 from src.monitor import DataMonitor
 from src.brain import AIBrain
 from src.executor import CodeExecutor
@@ -33,6 +37,12 @@ class AutonomousAgent:
         self.feature_pipeline_locked = False
         self.stop_flag = False
 
+        # --- Output delivery ---
+        self.run_id = uuid.uuid4().hex[:6].upper()
+        self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.telemetry_lines = []
+        self.execution_successful = False
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
@@ -51,6 +61,37 @@ class AutonomousAgent:
         return labels.get(self.current_model, self.current_model)
 
     # ------------------------------------------------------------------
+    # Telemetry
+    # ------------------------------------------------------------------
+
+    def _log(self, message: str):
+        self.telemetry_lines.append(message)
+        print(message)
+
+    def _write_telemetry(self, data_dir: str):
+        log_path = os.path.join(data_dir, "trial_execution.log")
+        with open(log_path, "w", encoding="utf-8") as f:
+            f.write(f"# Trial Execution Log — Run {self.run_id}\n")
+            f.write(f"# Timestamp: {self.timestamp}\n\n")
+            for line in self.telemetry_lines:
+                f.write(line + "\n")
+
+    def _write_manifest(self, data_dir: str):
+        manifest = {
+            "last_updated": self.timestamp,
+            "run_id": self.run_id,
+            "target_column": self.target_column,
+            "final_shape": list(self.best_df.shape) if self.best_df is not None else None,
+            "best_score": self.best_score,
+            "best_performing_artifact": os.path.join(data_dir, f"optimized_deployment_{self.timestamp}_{self.run_id}.csv"),
+            "competition_submission": os.path.join(data_dir, "submission.csv"),
+            "execution_trace": os.path.join(data_dir, "trial_execution.log"),
+        }
+        manifest_path = os.path.join(data_dir, "manifest.json")
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2)
+
+    # ------------------------------------------------------------------
     # Pivot state machine
     # ------------------------------------------------------------------
 
@@ -59,23 +100,22 @@ class AutonomousAgent:
         return _MODEL_SEQUENCE[idx + 1] if idx + 1 < len(_MODEL_SEQUENCE) else "STOP"
 
     def _handle_plateau(self, iteration: int):
-        """Called when consecutive_rejections reaches the threshold."""
         next_model = self._next_model()
 
         if next_model == "STOP":
-            print(f"🛑 [Agent] Feature space exhausted for {self.current_model}. Terminating run.")
+            self._log(f"🛑 [Agent] Feature space exhausted for {self.current_model}. Terminating run.")
             self.audit_history.append({
                 'iteration': iteration,
                 'status': '🛑 Early Stop',
                 'score': self.best_score,
                 'delta': 0,
-                'note': f"All strategies exhausted. Best score locked in.",
+                'note': "All strategies exhausted. Best score locked in.",
             })
             self.stop_flag = True
             return
 
-        print(f"🔄 [Agent] Plateau detected after {_MAX_CONSECUTIVE_REJECTIONS} rejections. "
-              f"Locking features and pivoting: {self.current_model} → {next_model}")
+        self._log(f"🔄 [Agent] Plateau detected after {_MAX_CONSECUTIVE_REJECTIONS} rejections. "
+                   f"Locking features and pivoting: {self.current_model} → {next_model}")
 
         self.feature_pipeline_locked = True
         self.current_model = next_model
@@ -95,14 +135,19 @@ class AutonomousAgent:
     # ------------------------------------------------------------------
 
     def run(self):
-        print("\nSTARTING AUTONOMOUS DATA SCIENCE AGENT")
+        self._log("\nSTARTING AUTONOMOUS DATA SCIENCE AGENT")
+        self._log(f"📋 Run ID: {self.run_id} | Timestamp: {self.timestamp}")
+
         if not self.monitor.load_data():
+            self._log("❌ [Agent] Data loading failed. Aborting.")
+            self._write_outputs()
             return
 
         current_df = self.monitor.df.copy()
         baseline = self.validator.evaluate(current_df)
         if "error" in baseline:
-            print(f"❌ [Agent] Baseline evaluation failed: {baseline['error']}. Aborting.")
+            self._log(f"❌ [Agent] Baseline evaluation failed: {baseline['error']}. Aborting.")
+            self._write_outputs()
             return
 
         self.best_score = baseline['score']
@@ -111,7 +156,7 @@ class AutonomousAgent:
         self.is_classification = baseline['task_type'] == "Classification"
         baseline_score = self.best_score
 
-        print(f"📊 [Agent] Baseline {self.metric_name}: {self.best_score}")
+        self._log(f"📊 [Agent] Baseline {self.metric_name}: {self.best_score}")
 
         for i in range(1, self.max_iterations + 1):
             if self.stop_flag:
@@ -123,7 +168,7 @@ class AutonomousAgent:
             if self.feature_pipeline_locked:
                 # PIVOT PHASE: evaluate locked best_df with the new model/HPO
                 phase_label = self._model_label()
-                print(f"🔬 [Agent] Iteration {i}: Evaluating locked features with {phase_label}...")
+                self._log(f"🔬 [Agent] Iteration {i}: Evaluating locked features with {phase_label}...")
                 eval_res = self.validator.evaluate(self.best_df, model_name=self.current_model)
 
                 if "error" not in eval_res and self._is_improvement(eval_res['score']):
@@ -137,7 +182,7 @@ class AutonomousAgent:
                         'delta': round(self.best_score - prev_score, 4),
                         'note': f"Model {phase_label} improved score.",
                     })
-                    print(f"✅ [Agent] Iteration {i} [{phase_label}]: {prev_score} → {self.best_score}")
+                    self._log(f"✅ [Agent] Iteration {i} [{phase_label}]: {prev_score} → {self.best_score}")
                 else:
                     self.consecutive_rejections += 1
                     self.audit_history.append({
@@ -147,8 +192,8 @@ class AutonomousAgent:
                         'delta': 0,
                         'note': eval_res.get('error', 'No improvement over current best.'),
                     })
-                    print(f"⚠️  [Agent] Iteration {i} [{phase_label}]: No improvement, "
-                          f"consecutive rejections = {self.consecutive_rejections}")
+                    self._log(f"⚠️  [Agent] Iteration {i} [{phase_label}]: No improvement, "
+                                f"consecutive rejections = {self.consecutive_rejections}")
 
                     if self.consecutive_rejections >= _MAX_CONSECUTIVE_REJECTIONS:
                         self._handle_plateau(i)
@@ -157,13 +202,30 @@ class AutonomousAgent:
                 # FEATURE ENGINEERING PHASE: AI generates transformation code
                 self.monitor.df = current_df.copy()
                 profile = self.monitor.generate_profile(self.target_column)
-                print("⏳ Giving Gemini API a brief cooling period...")
+                self._log("⏳ Giving Gemini API a brief cooling period...")
                 time.sleep(8)
-                code_string = self.brain.generate_transformation_code(
-                    profile, self.target_column,
-                    iteration=i, current_score=self.best_score,
-                    metric_name=self.metric_name, history=self.audit_history
-                )
+
+                try:
+                    code_string = self.brain.generate_transformation_code(
+                        profile, self.target_column,
+                        iteration=i, current_score=self.best_score,
+                        metric_name=self.metric_name, history=self.audit_history
+                    )
+                except RuntimeError as e:
+                    self._log(f"❌ [Agent] Brain failed after all retries: {e}")
+                    self._log("⚠️  [Agent] Skipping this iteration and continuing with current best.")
+                    self.consecutive_rejections += 1
+                    self.audit_history.append({
+                        'iteration': i,
+                        'status': '❌ Brain Failure',
+                        'score': self.best_score,
+                        'delta': 0,
+                        'note': f"API unreachable after retries: {e}",
+                    })
+                    if self.consecutive_rejections >= _MAX_CONSECUTIVE_REJECTIONS:
+                        self._handle_plateau(i)
+                    continue
+
                 new_df = self.executor.apply_transformation(current_df, code_string)
                 # Guard: never let AI corrupt the target column
                 new_df[self.target_column] = current_df[self.target_column].values
@@ -182,7 +244,7 @@ class AutonomousAgent:
                         'delta': round(self.best_score - prev_score, 4),
                         'note': '',
                     })
-                    print(f"✅ [Agent] Iteration {i}: {prev_score} → {self.best_score}")
+                    self._log(f"✅ [Agent] Iteration {i}: {prev_score} → {self.best_score}")
                 else:
                     reason = eval_res.get('error', 'No improvement') if "error" in eval_res else 'No improvement'
                     self.consecutive_rejections += 1
@@ -193,16 +255,46 @@ class AutonomousAgent:
                         'delta': 0,
                         'note': '',
                     })
-                    print(f"⚠️  [Agent] Iteration {i}: Rejected ({reason}), "
-                          f"consecutive = {self.consecutive_rejections}")
+                    self._log(f"⚠️  [Agent] Iteration {i}: Rejected ({reason}), "
+                                f"consecutive = {self.consecutive_rejections}")
 
                     if self.consecutive_rejections >= _MAX_CONSECUTIVE_REJECTIONS:
                         self._handle_plateau(i)
 
+        self._write_outputs()
+        self._generate_audit_report(baseline_score)
+
+    # ------------------------------------------------------------------
+    # Output delivery
+    # ------------------------------------------------------------------
+
+    def _write_outputs(self):
+        """Write all production artifacts to disk."""
+        data_dir = os.path.dirname(self.filepath)
+        os.makedirs(data_dir, exist_ok=True)
+
+        # 1. Standard optimized dataset
         self.best_df.to_csv(self.filepath.replace(".csv", "_optimized.csv"), index=False)
         self.best_df.to_csv(self.filepath, index=False)
-        print(f"🎉 Fully optimized dataset written to disk at: {self.filepath}")
-        self._generate_audit_report(baseline_score)
+        self._log(f"🎉 Fully optimized dataset written to disk at: {self.filepath}")
+
+        # 2. Atomic experiment artifact (timestamped, unique)
+        artifact_path = os.path.join(data_dir, f"optimized_deployment_{self.timestamp}_{self.run_id}.csv")
+        self.best_df.to_csv(artifact_path, index=False)
+        self._log(f"📦 Atomic artifact saved: {artifact_path}")
+
+        # 3. Competition submission copy
+        submission_path = os.path.join(data_dir, "submission.csv")
+        self.best_df.to_csv(submission_path, index=False)
+        self._log(f"🏆 Competition submission copied: {submission_path}")
+
+        # 4. Telemetry log
+        self._write_telemetry(data_dir)
+        self._log(f"📝 Telemetry log saved: {os.path.join(data_dir, 'trial_execution.log')}")
+
+        # 5. Metadata manifest
+        self._write_manifest(data_dir)
+        self._log(f"📄 Manifest saved: {os.path.join(data_dir, 'manifest.json')}")
 
     # ------------------------------------------------------------------
     # Audit report
