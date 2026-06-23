@@ -1,0 +1,48 @@
+You are an expert system engineer. Your task is to refactor the LLM API calling function inside our agent codebase (likely in `src/main.py`) to prevent a critical blind-execution bug during 503 errors.
+
+Follow this explicit Chain of Thought before writing any code:
+1. IDENTIFY: Find the exact function where the Gemini API client requests content (`client.models.generate_content` or similar model generation call).
+2. ISOLATE: Look at the exception handling block. Notice that when a 503 UNAVAILABLE error occurs, the script currently catches it but continues moving forward anyway. This passes an empty/unmodified string to the execution matrix, causing an accidental, failed iteration loop.
+3. REFACTOR: Wrap that specific API invocation block in a clean, self-contained `while` retry loop using exponential backoff.
+4. VALIDATE: Ensure the function ONLY returns or breaks to move forward to the compilation phase AFTER a valid string response is received from Gemini.
+
+[CRITICAL ATTENTION: IMPLEMENTATION RULES]
+- DO NOT rewrite the entire file. Only rewrite the targeted API calling function.
+- Add `import time` at the top of the file if it is missing.
+- Set a maximum retry limit of 5.
+- The initial backoff delay must be 8 seconds. Multiply the delay by 1.5x after every consecutive 503 failure (e.g., 8s, 12s, 18s...).
+- Print a clear console warning during backoffs: f"⚠️ Gemini API is congested (503). Retrying {retry_count}/5 in {current_delay}s..."
+- If all 5 retries fail, raise a clean RuntimeError with an explicit error trace to safely halt the agent pipeline.
+
+[STRUCTURAL TEMPLATE TO FOLLOW]
+Your modification must mirror this logic structure:
+
+def your_api_call_function(*args, **kwargs):
+    retries = 0
+    delay = 8
+    max_retries = 5
+    
+    while retries < max_retries:
+        try:
+            # 1. Clear text print log
+            print("🧠 Requesting transformation strategy from gemini-2.5-flash...")
+            
+            # 2. Existing Gemini API Call goes here
+            response = [EXISTING_API_CALL_LOGIC]
+            
+            # 3. Only return if successful
+            return response
+            
+        except Exception as e:
+            error_str = str(e).upper()
+            if "503" in error_str or "UNAVAILABLE" in error_str:
+                retries += 1
+                print(f"⚠️ Gemini API is congested (503). Retrying {retries}/{max_retries} in {delay}s...")
+                time.sleep(delay)
+                delay *= 1.5
+            else:
+                raise e # Immediately bubble up structural or authorization bugs
+                
+    raise RuntimeError("❌ Max retries exceeded. Gemini API remains unavailable.")
+
+Please analyze the file carefully and apply this structural change seamlessly. Do not omit any pre-existing variables or parameters required by the function signature!

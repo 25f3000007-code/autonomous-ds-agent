@@ -1,6 +1,7 @@
 # src/brain.py
 import os
 import sys
+import time
 
 
 
@@ -189,28 +190,42 @@ class AIBrain:
             "Generate preprocessing code that builds on what has already been done and tries a fresh angle to improve the score."
         )
 
-        try:
-            print(f"🧠 [Brain] Requesting transformation strategy from {self.model_name}...")
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    temperature=0.2,
+        retries = 0
+        delay = 8
+        max_retries = 5
+
+        while retries < max_retries:
+            try:
+                print(f"🧠 [Brain] Requesting transformation strategy from {self.model_name}...")
+                response = self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.2,
+                    )
                 )
-            )
-            code = response.text.strip()
-            # Clean up markdown code block wrapping if the model ignored instructions
-            import re
-            match = re.search(r"```python\s*(.*?)\s*```", code, re.DOTALL)
-            if not match:
-                match = re.search(r"```\s*(.*?)\s*```", code, re.DOTALL)
-            if match:
-                code = match.group(1).strip()
-            return code
-        except Exception as e:
-            print(f"❌ [Brain] API call failed: {e}")
-            return ""
+                code = response.text.strip()
+                # Clean up markdown code block wrapping if the model ignored instructions
+                import re
+                match = re.search(r"```python\s*(.*?)\s*```", code, re.DOTALL)
+                if not match:
+                    match = re.search(r"```\s*(.*?)\s*```", code, re.DOTALL)
+                if match:
+                    code = match.group(1).strip()
+                return code
+
+            except Exception as e:
+                error_str = str(e).upper()
+                if "503" in error_str or "UNAVAILABLE" in error_str:
+                    retries += 1
+                    print(f"⚠️ Gemini API is congested (503). Retrying {retries}/{max_retries} in {delay}s...")
+                    time.sleep(delay)
+                    delay *= 1.5
+                else:
+                    raise e
+
+        raise RuntimeError("❌ Max retries exceeded. Gemini API remains unavailable.")
 
 if __name__ == "__main__":
     print("--- Testing Brain Module ---")
