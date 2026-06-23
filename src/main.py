@@ -273,6 +273,17 @@ class AutonomousAgent:
         data_dir = os.path.dirname(self.filepath)
         os.makedirs(data_dir, exist_ok=True)
 
+        # Guard: if best_df is None (e.g., baseline failure), fall back to raw data
+        if self.best_df is None:
+            if self.monitor.df is not None:
+                self.best_df = self.monitor.df.copy()
+                self._log("⚠️  [Agent] best_df is None. Falling back to raw dataset for output.")
+            else:
+                self._log("⚠️  [Agent] No data available. Skipping artifact writes.")
+                self._write_telemetry(data_dir)
+                self._write_manifest(data_dir)
+                return
+
         # 1. Standard optimized dataset
         self.best_df.to_csv(self.filepath.replace(".csv", "_optimized.csv"), index=False)
         self.best_df.to_csv(self.filepath, index=False)
